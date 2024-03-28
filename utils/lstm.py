@@ -11,23 +11,25 @@ import time
 input_seq_len = 300
 output_seq_len = 30
 hidden_layer_size = 64
-num_layers = 8
-early_stop_loss = 0.0005
+num_layers = 2
+early_stop_loss = 0.002
 early_stop_diff = 0.0005
 epochs = 10
-lr = 0.0001
+lr = 0.002
 
 # Load the data
 data = pd.read_csv('VM500.csv', usecols=[0,1,2])
 
 # Normalize the data
-scaler = MinMaxScaler(feature_range=(0, 1))
+scaler = MinMaxScaler(feature_range=(-1, 1))
 data_normalized = scaler.fit_transform(data)
 
 # Split the data into training and test sets
 train_size = int(len(data_normalized) * 0.7)
 train_set = data_normalized[:train_size]
 test_set = data_normalized[train_size:]
+test_set_origin = data[train_size:]
+test_set_origin = np.array(test_set_origin)
 
 # Convert the data into tensors
 train_set = torch.FloatTensor(train_set)
@@ -67,6 +69,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
 for i in range(epochs):
     start_time = time.time()
+    epoch_loss = 0.0
+    num_batches = 0
     for seq, labels in train_inout_seq:
         optimizer.zero_grad()
         model.hidden_cell = (torch.zeros(num_layers, 1, model.hidden_layer_size),
@@ -77,11 +81,14 @@ for i in range(epochs):
         single_loss = loss_function(y_pred, labels.unsqueeze(1))
         single_loss.backward()
         optimizer.step()
-        
+
+        epoch_loss += single_loss.item()
+        num_batches += 1
 
     end_time = time.time()
-    print(f'epoch: {i:3} loss: {single_loss.item():10.8f} time: {end_time-start_time:5}s')
-    if single_loss.item() < early_stop_loss:
+    avg_loss = epoch_loss / num_batches
+    print(f'epoch: {i:3} loss: {avg_loss:10.8f} time: {end_time-start_time:5}s')
+    if avg_loss < early_stop_loss:
         break
 
 
@@ -101,6 +108,14 @@ for i in range(0, len(test_set)-input_seq_len-output_seq_len, input_seq_len):
 
 #print("test dataset output:", test_outputs)
 # Calculate the MSE error
+pred_res = test_outputs[input_seq_len:]
+pred_res = np.array(pred_res)
+
+full_pred_res = np.zeros((len(pred_res), 3))
+full_pred_res[:, 2] = pred_res.flatten()
+inverse_data = scaler.inverse_transform(full_pred_res)
+pred_res_origin = inverse_data[:, 2]
+
 #actual_predictions = scaler.inverse_transform(np.array(test_outputs[input_seq_len:] ).reshape(0, 1))
 x = np.array(range(input_seq_len, len(test_outputs)+input_seq_len))
 
@@ -109,7 +124,9 @@ print('The Mean Squared Error of our forecasts is {}'.format(round(mse, 2)))
 
 # Plot the actual vs predicted values
 plt.grid(True)
-plt.plot(test_set[x,2], label='Real', color='r')
-plt.plot(test_outputs, label='Predicted', color='b')
+print(test_set_origin)
+#print(pred_res_origin)
+plt.plot(test_set_origin[:,2], label='Real', color='r')
+plt.plot(pred_res_origin, label='Predicted', color='b')
 plt.show()
 plt.savefig("lstm1.png")
