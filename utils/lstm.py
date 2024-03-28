@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import time
 
 # Define the sequence lengths and other variables
-input_seq_len = 300
-output_seq_len = 30
+input_seq_len = 180
+output_seq_len = 180
 hidden_layer_size = 64
 num_layers = 2
 early_stop_loss = 0.002
@@ -67,6 +67,8 @@ model = LSTM(input_size=3, hidden_layer_size=hidden_layer_size, output_size=1, n
 loss_function = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+last_loss = 1
+count = 0
 for i in range(epochs):
     start_time = time.time()
     epoch_loss = 0.0
@@ -90,6 +92,13 @@ for i in range(epochs):
     print(f'epoch: {i:3} loss: {avg_loss:10.8f} time: {end_time-start_time:5}s')
     if avg_loss < early_stop_loss:
         break
+    if abs(avg_loss - last_loss) < early_stop_diff:
+        count = count + 1
+        if count > 2:
+            break
+    else:
+        count = 0
+    last_loss = avg_loss
 
 
 # Make predictions on the test set
