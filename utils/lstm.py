@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 import time
 
 # Define the sequence lengths and other variables
-predict_step = 30
+predict_step = 60
 input_seq_len = 180
 output_seq_len = 180
 hidden_layer_size = 64
 num_layers = 2
 early_stop_loss = 0.002
 early_stop_diff = 0.0001
-epochs = 10
+epochs = 20
 lr = 0.005
 
 # Load the data
@@ -130,6 +130,7 @@ model_skewed.eval()
 for i in range(0, len(test_set)-input_seq_len-output_seq_len, predict_step):
     seq = test_set[i:i+input_seq_len, 0:2]
     duration = 0
+    cnt = 0
     with torch.no_grad():
         model.hidden = (torch.zeros(num_layers, 1, model.hidden_layer_size),
                         torch.zeros(num_layers, 1, model.hidden_layer_size))
@@ -139,9 +140,11 @@ for i in range(0, len(test_set)-input_seq_len-output_seq_len, predict_step):
         start_time = time.time()
         pre_skewed = model_skewed(seq)
         end_time = time.time()
-        duration += end_time() - start_time()
+        duration += end_time - start_time
+        cnt += 1
         test_outputs.extend(pre.tolist()[:predict_step])
         test_outputs_skewed.extend(pre_skewed.tolist()[:predict_step])
+print(f"Inference time: {duration/cnt}")
 
 #print("test dataset output:", test_outputs)
 # Calculate the MSE error
@@ -173,22 +176,16 @@ x = np.array(range(input_seq_len, len(test_outputs)+input_seq_len))
 mse = mean_squared_error(test_set[x,1], test_outputs)
 print('The Mean Squared Error of our forecasts is {}'.format(round(mse, 2)))
 
-def average_error(list1, list2):
-    if len(list1) != len(list2):
-        raise ValueError("length is not equal.")
-    
-    errors = [abs(list1[i] - list2[i]) / list1[i] for i in range(len(list1))]
+def average_error(list1, list2): 
+    errors = [abs(list1[i] - list2[i]) / list1[i] for i in range(min(len(list1), len(list2)))]
     return sum(errors) / len(errors)
 
-def count_long_intervals(list1, list2):
-    if len(list1) != len(list2):
-        raise ValueError("length is not equal.")
-    
+def count_long_intervals(list1, list2): 
     count = 0
     in_interval = False
     interval_length = 0
 
-    for i in range(len(list1)):
+    for i in range(min(len(list1), len(list2))):
         if list2[i] < list1[i]:
             if not in_interval:
                 in_interval = True
@@ -209,14 +206,11 @@ def count_long_intervals(list1, list2):
     return count
 
 def count_large_intervals(list1, list2):
-    if len(list1) != len(list2):
-        raise ValueError("length is not equal.")
-    
     count = 0
     in_interval = False
     interval_length = 0
 
-    for i in range(len(list1)):
+    for i in range(min(len(list1), len(list2))):
         if list2[i] < list1[i] - 50:  # 判断是否小于100
             if not in_interval:
                 in_interval = True
@@ -240,7 +234,7 @@ def count_large_intervals(list1, list2):
 print('diff of real and predict_mse is {}'.format(average_error(real_res_print, pred_res_origin)))
 print('diff of real and predict_skewed is {}'.format(average_error(real_res_print, pred_res_origin_skewed)))
 print('sla predict_mse is {}'.format(count_long_intervals(real_res_print, pred_res_origin) + count_large_intervals(real_res_print, pred_res_origin)))
-print('sla predict_skewed is {}'.format(count_long_intervals(real_res_print, pred_res_origin) + count_large_intervals(real_res_print, pred_res_origin)))
+print('sla predict_skewed is {}'.format(count_long_intervals(real_res_print, pred_res_origin_skewed) + count_large_intervals(real_res_print, pred_res_origin_skewed)))
 
 
 # Plot the actual vs predicted values
@@ -253,6 +247,7 @@ plt.plot(pred_res_origin_skewed, label='Predicted_Skewed', color='g')
 plt.legend()
 plt.show()
 plt.savefig("lstm1.png")
+plt.savefig("lstm1.pdf")
 
 import json
 
@@ -267,7 +262,7 @@ def read_list_from_file(filename):
 file1 = "mse.json"
 file2 = "skewed.json"
 
-write_list_to_file(pred_res_origin, file1)
-write_list_to_file(pred_res_origin_skewed, file2)
+write_list_to_file(pred_res_origin.tolist(), file1)
+write_list_to_file(pred_res_origin_skewed.tolist(), file2)
 torch.save(model.state_dict(), model_mse_path)
 torch.save(model_skewed.state_dict(), model_skewed_path)
