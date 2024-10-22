@@ -4,9 +4,6 @@ import random
 
 plt.rcParams['font.size'] = 12
 
-
-#plt.figure(figsize=(16, 6))
-
 file1 = f"real.json"
 file2 = f"mse.json"
 file3 = f"skewed.json"
@@ -27,8 +24,7 @@ l = min(len(data1), len(data2), len(data3))
 x_values = range(l)
 
 # 绘制曲线
-#plt.ylim(0, 2500)
-
+plt.ylim(0, 2500)
 plt.plot(x_values, data1[:l], label='Real', color='r')
 plt.plot(x_values, data2[:l], label='Predicted_MSE', color='b')
 plt.plot(x_values, data3[:l], label='Predicted_Skewed', color='g')
@@ -61,7 +57,7 @@ def count_long_intervals(list1, list2):
                 interval_length += 1  # 增加当前区间的长度
         else:
             if in_interval:
-                if interval_length >= 60:
+                if interval_length > 150:
                     count += 1  # 结束区间且长度大于60
                 in_interval = False
                 interval_length = 0  # 重置区间长度
@@ -86,7 +82,7 @@ def count_large_intervals(list1, list2):
                 interval_length += 1  # 增加当前区间的长度
         else:
             if in_interval:
-                if interval_length >= 10:
+                if interval_length > 12:
                     count += 1  # 结束区间且长度大于10
                 in_interval = False
                 interval_length = 0  # 重置区间长度
