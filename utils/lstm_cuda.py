@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import time
 import json
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cpu')
 #torch.set_default_dtype(torch.float64)
 
 # Define the sequence lengths and other variables
-predict_step = 96
+predict_step = 1
 input_seq_len = 96
 output_seq_len = 96
 hidden_layer_size = 128
@@ -25,7 +26,7 @@ lr = 0.005
 # Load the data
 data = pd.read_csv('VM3.csv', usecols=[0,1])
 model_mse_path = "model_mse.pth"
-model_skewed_path = "model_skewed.pth"
+model_skewed_path = "model_skewed2.pth"
 
 # Normalize the data
 scaler = MinMaxScaler(feature_range=(0, 1))
@@ -125,13 +126,13 @@ def train_model(loss_function, early_stop_loss, epochs):
     return model
 
 #model = train_model(loss_function=nn.MSELoss(), early_stop_loss=early_stop_loss_mse, epochs=10)
-#model_skewed = train_model(loss_function=AsymmetricLoss(), early_stop_loss=early_stop_loss_skewed, epochs=10)
+model_skewed = train_model(loss_function=AsymmetricLoss(), early_stop_loss=early_stop_loss_skewed, epochs=10)
 
 model = LSTM(input_size=2, hidden_layer_size=hidden_layer_size, output_size=1, num_layers=num_layers).to(device)
 model.load_state_dict(torch.load(model_mse_path))
 
-model_skewed = LSTM(input_size=2, hidden_layer_size=hidden_layer_size, output_size=1, num_layers=num_layers).to(device)
-model_skewed.load_state_dict(torch.load(model_skewed_path))
+#model_skewed = LSTM(input_size=2, hidden_layer_size=hidden_layer_size, output_size=1, num_layers=num_layers).to(device)
+#model_skewed.load_state_dict(torch.load(model_skewed_path))
 
 # Make predictions on the test set
 test_outputs = []
@@ -194,9 +195,9 @@ def write_list_to_file(my_list, filename):
     with open(filename, 'w') as file:
         json.dump(my_list, file)
 
-write_list_to_file(pred_res_origin.tolist(), "mse.json")
-write_list_to_file(pred_res_origin_skewed.tolist(), "skewed.json")
-write_list_to_file(real_res.tolist(), "real.json")
+#write_list_to_file(pred_res_origin.tolist(), "mse.json")
+write_list_to_file(pred_res_origin_skewed.tolist(), "skewed2.json")
+#write_list_to_file(real_res.tolist(), "real.json")
 
 torch.save(model.state_dict(), model_mse_path)
 torch.save(model_skewed.state_dict(), model_skewed_path)

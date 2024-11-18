@@ -15,7 +15,7 @@ def process_csv(input_files, output_file):
             with open(output_file, 'w', newline='') as outfile:
                 writer = csv.writer(outfile)
                 for row in reader:
-                    processed_row = [row[0], str(float(row[10])+800)]
+                    processed_row = [row[0], str(float(row[10]))]
                     writer.writerow(processed_row)
 
 if __name__ == "__main__":

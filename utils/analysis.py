@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 import random
 
-plt.rcParams['font.size'] = 12
+plt.rcParams['font.size'] = 19
 
 
 #plt.figure(figsize=(16, 6))
@@ -10,6 +10,8 @@ plt.rcParams['font.size'] = 12
 file1 = f"real.json"
 file2 = f"mse.json"
 file3 = f"skewed.json"
+file4 = f"mbfq.json"
+file5 = f"mbfq_opt.json"
 
 # 读取JSON文件并返回list
 def read_json(file_name):
@@ -21,20 +23,27 @@ def read_json(file_name):
 data1 = read_json(file1)
 data2 = read_json(file2)
 data3 = read_json(file3)
+data4 = read_json(file4)
+data5 = read_json(file5)
+
 
 # 创建x轴数据
-l = min(len(data1), len(data2), len(data3))
-x_values = range(l)
+l = min(len(data1), len(data2), len(data3), len(data4))
+x_values = range(l-3)
 
 # 绘制曲线
 #plt.ylim(0, 2500)
 
-plt.plot(x_values, data1[:l], label='Real', color='r')
-plt.plot(x_values, data2[:l], label='Predicted_MSE', color='b')
-plt.plot(x_values, data3[:l], label='Predicted_Skewed', color='g')
+plt.figure(figsize=(16, 6))
+
+plt.plot(x_values, data1[4:l+1], label='Real Bandwidth', color='r', linewidth=2)
+#plt.plot(x_values, data2[:l], label='Predicted_MSE', color='b')
+#plt.plot(x_values, data3[:l], label='Predicted_Skewed', color='g')
+#plt.plot(x_values, data4[3:l], label='Allocated Bandwidth', linewidth=2)
+plt.plot(x_values, data5[3:l], label='Allocated Bandwidth', color='g', linewidth=2)
 
 # 添加图例和标签
-plt.legend()
+plt.legend(loc='upper right')
 plt.xlabel('Time(s)')
 plt.ylabel('Bandwidth(KB/s)')
 
